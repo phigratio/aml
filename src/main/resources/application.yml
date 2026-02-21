@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: aml
+
+server:
+  port: 8080
+
+# ═══════════════════════════════════════════════════════════════════════════
+# AML RULE ENGINE CONFIGURATION - JAVA 25 VIRTUAL THREADS
+# ═══════════════════════════════════════════════════════════════════════════
+
+aml:
+  engine:
+    rule001:
+      # Age threshold in days for "newly opened" account detection
+      # FFIEC standard: 30 days
+      # Adjust lower for high-risk segments, higher for low-risk
+      age-threshold-days: 30
+      
+      # Minimum transaction amount to trigger Rule 001 (in base currency)
+      # Default: 5000 USD equivalent
+      # Should be adjusted per currency and jurisdiction
+      amount-threshold: 5000.00
+      
+      # Enable/disable Rule 001 detection
+      # Allows operational control without redeployment
+      enabled: true
+      
+      # Apply risk-based threshold adjustments
+      # HIGH-RISK customers: stricter (lower) thresholds
+      # CRITICAL customers: even stricter thresholds
+      apply-risk-adjustments: true
+
+# ═══════════════════════════════════════════════════════════════════════════
+# LOGGING CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════════════
+
+logging:
+  level:
+    root: INFO
+    com.tms.aml: DEBUG
+    com.tms.aml.engine: DEBUG
+    com.tms.aml.engine.rule: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
