@@ -19,6 +19,11 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * AML Rule Engine REST API Controller — ISO 20022 pacs.008 Gateway
@@ -44,6 +49,7 @@ import java.util.*;
 public class AMLRuleEngineController {
 
     private static final Logger logger = LoggerFactory.getLogger(AMLRuleEngineController.class);
+    private static final long TRANSACTION_EVALUATION_TIMEOUT_MS = 2_000L;
 
     private final AMLRuleEngine ruleEngine;
 
@@ -86,32 +92,65 @@ public class AMLRuleEngineController {
             // ─── Parse CustomerContext from DTO ─────────────────────────────
             CustomerContext customer = mapCustomerContext(message.getCustomerContext());
 
-            // ─── Parse each CdtTrfTxInf → Transaction and evaluate ─────────
+            // ─── Parse each CdtTrfTxInf → Transaction and evaluate concurrently ───
             List<TransactionEvaluationResult> results = new ArrayList<>();
+            List<Map<String, Object>> errors = new ArrayList<>();
+            List<Future<TransactionEvaluationResult>> futures = new ArrayList<>();
 
-            for (CdtTrfTxInf txInf : message.getCdtTrfTxInf()) {
-                Transaction transaction = mapTransaction(txInf, message.getGrpHdr());
+            try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+                for (CdtTrfTxInf txInf : message.getCdtTrfTxInf()) {
+                    futures.add(executor.submit(() -> {
+                        Transaction transaction = mapTransaction(txInf, message.getGrpHdr());
 
-                logger.info("ISO 20022 pacs.008 received — msgId={}, txId={}, amount={} {}, creditor={}",
-                        message.getGrpHdr().getMsgId(),
-                        transaction.transactionId(),
-                        transaction.amount(),
-                        transaction.currency(),
-                        customer.customerId());
+                        logger.info("ISO 20022 pacs.008 received — msgId={}, txId={}, amount={} {}, creditor={}",
+                            message.getGrpHdr().getMsgId(),
+                            transaction.transactionId(),
+                            transaction.amount(),
+                            transaction.currency(),
+                            customer.customerId());
 
-                // This call fans out to ALL rules concurrently via Virtual Threads
-                TransactionEvaluationResult result =
-                        ruleEngine.evaluateTransaction(transaction, customer);
+                        return ruleEngine.evaluateTransaction(transaction, customer);
+                    }));
+                }
 
-                results.add(result);
+                for (Future<TransactionEvaluationResult> future : futures) {
+                    try {
+                        results.add(future.get(TRANSACTION_EVALUATION_TIMEOUT_MS, TimeUnit.MILLISECONDS));
+                    } catch (TimeoutException e) {
+                        future.cancel(true);
+                        errors.add(Map.of(
+                            "error", "TRANSACTION_TIMEOUT",
+                            "detail", "A transaction evaluation timed out after " + TRANSACTION_EVALUATION_TIMEOUT_MS + " ms"
+                        ));
+                    } catch (ExecutionException e) {
+                        String detail = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
+                        if (detail == null || detail.isBlank()) {
+                            detail = "Unexpected evaluation failure";
+                        }
+                        errors.add(Map.of(
+                            "error", "TRANSACTION_EVALUATION_ERROR",
+                            "detail", detail
+                        ));
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        errors.add(Map.of(
+                            "error", "TRANSACTION_INTERRUPTED",
+                            "detail", "Transaction evaluation was interrupted"
+                        ));
+                    }
+                }
             }
 
             // ─── Build response ─────────────────────────────────────────────
             Map<String, Object> response = new LinkedHashMap<>();
             response.put("messageId", message.getGrpHdr().getMsgId());
             response.put("evaluatedAt", Instant.now());
+            response.put("requestedTransactionCount", message.getCdtTrfTxInf().size());
             response.put("transactionCount", results.size());
+            response.put("errorCount", errors.size());
+            response.put("status", errors.isEmpty() ? "SUCCESS" : "PARTIAL_SUCCESS");
             response.put("results", results);
+            response.put("errors", errors);
 
             return ResponseEntity.ok(response);
 

@@ -1,12 +1,15 @@
 package com.tms.aml.engine.rule.impl;
 
 import com.tms.aml.engine.rule.Rule;
+import com.tms.aml.engine.rule.RuleContext;
 import com.tms.aml.domain.Transaction;
 import com.tms.aml.domain.CustomerContext;
 import com.tms.aml.domain.RuleResult;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -164,7 +167,9 @@ public class Rule001DerivedAccountAgeCreditor implements Rule {
     private static final double UNUSUAL_AMOUNT_PENALTY = 0.15; // Amount > 3x baseline
     private static final double HIGH_RISK_PENALTY = 0.15;      // HIGH-RISK customer
     private static final double PEP_SANCTION_PENALTY = 0.10;   // PEP/Sanctioned
+    private static final double MULTI_CREDIT_24H_PENALTY = 0.10; // Multiple inbound credits in 24h
     private static final double DOCUMENTATION_DISCOUNT = 0.10; // Clear purpose stated
+    private static final int MULTI_CREDIT_LOOKBACK_HOURS = 24;
     
     // ═══════════════════════════════════════════════════════════════════════════
     // RULE INTERFACE IMPLEMENTATIONS
@@ -225,7 +230,7 @@ public class Rule001DerivedAccountAgeCreditor implements Rule {
      * @throws Rule.RuleEvaluationException if critical data is missing
      */
     @Override
-    public RuleResult evaluate(Transaction transaction, CustomerContext customer)
+    public RuleResult evaluate(Transaction transaction, CustomerContext customer, RuleContext context)
         throws Rule.RuleEvaluationException {
         
         long evaluationStartTime = System.currentTimeMillis();
@@ -317,7 +322,7 @@ public class Rule001DerivedAccountAgeCreditor implements Rule {
             // ───────────────────────────────────────────────────────────────────
             
             double severityScore = calculateDynamicSeverity(
-                transaction, customer, accountAgeDays
+                transaction, customer, context, accountAgeDays
             );
             
             // ───────────────────────────────────────────────────────────────────
@@ -402,6 +407,7 @@ public class Rule001DerivedAccountAgeCreditor implements Rule {
     private double calculateDynamicSeverity(
         Transaction transaction,
         CustomerContext customer,
+        RuleContext context,
         long accountAgeDays
     ) {
         double score = BASE_SEVERITY;
@@ -431,6 +437,11 @@ public class Rule001DerivedAccountAgeCreditor implements Rule {
         // Penalty 4: PEP or Sanctioned status
         if (customer.pep() || customer.sanctionedStatus()) {
             score += PEP_SANCTION_PENALTY;
+        }
+
+        // Penalty 5: Multiple inbound credits to the same account in the last 24h
+        if (hasMultipleRecentInboundCredits(transaction, context)) {
+            score += MULTI_CREDIT_24H_PENALTY;
         }
         
         // Discount: Clear business purpose documented
@@ -470,6 +481,23 @@ public class Rule001DerivedAccountAgeCreditor implements Rule {
         }
         
         return false;
+    }
+
+    private boolean hasMultipleRecentInboundCredits(Transaction transaction, RuleContext context) {
+        LocalDateTime windowStart = transaction.transactionDate().minusHours(MULTI_CREDIT_LOOKBACK_HOURS);
+        List<Transaction> history = context.transactionHistoryProvider().findInboundTransactions(
+            transaction.accountNumber(),
+            windowStart,
+            transaction.transactionDate()
+        );
+
+        long distinctCredits = history.stream()
+            .map(Transaction::transactionId)
+            .distinct()
+            .count();
+
+        // Include current transaction because the provider may only have prior history.
+        return distinctCredits + 1 >= 2;
     }
     
     // ═══════════════════════════════════════════════════════════════════════════
@@ -514,9 +542,13 @@ public class Rule001DerivedAccountAgeCreditor implements Rule {
         // Baseline Activity Evidence
         if (customer.monthlyAverageCredit() != null) {
             evidence.put("monthly_average_credit", customer.monthlyAverageCredit());
-            evidence.put("transaction_vs_baseline_ratio",
-                transaction.amount().divide(customer.monthlyAverageCredit(), 
-                    java.math.RoundingMode.HALF_UP));
+            if (customer.monthlyAverageCredit().compareTo(BigDecimal.ZERO) > 0) {
+                evidence.put("transaction_vs_baseline_ratio",
+                    transaction.amount().divide(customer.monthlyAverageCredit(),
+                        java.math.RoundingMode.HALF_UP));
+            } else {
+                evidence.put("transaction_vs_baseline_ratio", null);
+            }
         }
         
         // Counterparty Evidence

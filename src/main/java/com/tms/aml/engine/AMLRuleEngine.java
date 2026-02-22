@@ -3,7 +3,11 @@ package com.tms.aml.engine;
 import com.tms.aml.domain.Transaction;
 import com.tms.aml.domain.CustomerContext;
 import com.tms.aml.domain.RuleResult;
+import com.tms.aml.engine.history.NoOpTransactionHistoryProvider;
+import com.tms.aml.engine.history.TransactionHistoryProvider;
 import com.tms.aml.engine.rule.Rule;
+import com.tms.aml.engine.rule.RuleContext;
+import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,6 +116,7 @@ public class AMLRuleEngine {
      * One virtual thread per rule evaluation, with automatic lifecycle management.
      */
     private final ExecutorService virtualThreadExecutor;
+    private final TransactionHistoryProvider transactionHistoryProvider;
     
     /**
      * Registry of all available rules, mapped by rule ID
@@ -147,9 +152,16 @@ public class AMLRuleEngine {
      * Constructor - Initializes rule engine with Virtual Thread executor
      */
     public AMLRuleEngine() {
+        this(new NoOpTransactionHistoryProvider());
+    }
+
+    public AMLRuleEngine(TransactionHistoryProvider transactionHistoryProvider) {
         // Create executor backed by Virtual Threads (Java 19+)
         // Each rule evaluation runs in its own lightweight virtual thread
         this.virtualThreadExecutor = Executors.newVirtualThreadPerTaskExecutor();
+        this.transactionHistoryProvider = Objects.requireNonNull(
+            transactionHistoryProvider, "transactionHistoryProvider cannot be null"
+        );
         
         // Thread-safe rule registry
         this.ruleRegistry = new ConcurrentHashMap<>();
@@ -213,15 +225,25 @@ public class AMLRuleEngine {
             
             if (enabledRules.isEmpty()) {
                 logger.warn("No rules enabled in rule registry");
-                return buildEmptyResult(transaction, customer, evaluationStartTime);
+                TransactionEvaluationResult emptyResult = buildEmptyResult(
+                    transaction, customer, evaluationStartTime
+                );
+                transactionHistoryProvider.recordTransaction(transaction);
+                return emptyResult;
             }
             
             // ─────────────────────────────────────────────────────────────────
             // Execute all rules concurrently using Virtual Threads
             // ─────────────────────────────────────────────────────────────────
+
+            RuleContext ruleContext = new RuleContext(
+                transactionHistoryProvider,
+                Instant.now(),
+                Map.of("transaction_id", transaction.transactionId())
+            );
             
             List<RuleResult> ruleResults = evaluateRulesConcurrently(
-                transaction, customer, enabledRules
+                transaction, customer, enabledRules, ruleContext
             );
             
             // ─────────────────────────────────────────────────────────────────
@@ -255,7 +277,8 @@ public class AMLRuleEngine {
             logger.info("Transaction {} evaluated: risk_score={}, triggered_rules={}, time_ms={}",
                 transaction.transactionId(), transactionRiskScore, 
                 triggeredRules.size(), totalEvaluationTimeMs);
-            
+
+            transactionHistoryProvider.recordTransaction(transaction);
             return result;
             
         } catch (Exception e) {
@@ -290,46 +313,87 @@ public class AMLRuleEngine {
     private List<RuleResult> evaluateRulesConcurrently(
         Transaction transaction,
         CustomerContext customer,
-        List<Rule> rules
+        List<Rule> rules,
+        RuleContext ruleContext
     ) {
-        List<RuleResult> results = Collections.synchronizedList(new ArrayList<>());
-        List<Future<?>> futures = new ArrayList<>();
+        List<RuleResult> results = new ArrayList<>(rules.size());
+        Map<Rule, Future<RuleResult>> futures = new LinkedHashMap<>();
         
         // Submit all rules for concurrent evaluation
         for (Rule rule : rules) {
-            Future<?> future = virtualThreadExecutor.submit(() -> {
-                try {
-                    RuleResult result = rule.evaluate(transaction, customer);
-                    results.add(result);
-                } catch (Rule.RuleEvaluationException e) {
-                    logger.warn("Rule {} evaluation failed for transaction {}: {}",
-                        rule.getRuleId(), transaction.transactionId(), e.getMessage());
-                    // Continue with other rules (non-blocking failure)
-                } catch (Exception e) {
-                    logger.error("Unexpected error in rule {} evaluation: {}",
-                        rule.getRuleId(), e.getMessage(), e);
-                }
+            Future<RuleResult> future = virtualThreadExecutor.submit(() -> {
+                long ruleStartTime = System.currentTimeMillis();
+                return evaluateSingleRule(rule, transaction, customer, ruleContext, ruleStartTime);
             });
-            futures.add(future);
+            futures.put(rule, future);
         }
         
         // Wait for all rules to complete with timeout
         long deadline = System.currentTimeMillis() + EVALUATION_TIMEOUT_MS;
-        for (Future<?> future : futures) {
+        for (Map.Entry<Rule, Future<RuleResult>> entry : futures.entrySet()) {
+            Rule rule = entry.getKey();
+            Future<RuleResult> future = entry.getValue();
             try {
                 long remainingTime = deadline - System.currentTimeMillis();
                 if (remainingTime > 0) {
-                    future.get(remainingTime, java.util.concurrent.TimeUnit.MILLISECONDS);
+                    results.add(future.get(remainingTime, java.util.concurrent.TimeUnit.MILLISECONDS));
+                } else {
+                    future.cancel(true);
+                    results.add(buildFailedRuleResult(
+                        rule, transaction, customer, "RULE_TIMEOUT",
+                        "Rule evaluation deadline exceeded before completion", EVALUATION_TIMEOUT_MS
+                    ));
                 }
             } catch (java.util.concurrent.TimeoutException e) {
                 logger.warn("Rule evaluation timed out after {} ms", EVALUATION_TIMEOUT_MS);
                 future.cancel(true);
+                results.add(buildFailedRuleResult(
+                    rule, transaction, customer, "RULE_TIMEOUT",
+                    "Rule evaluation timed out after " + EVALUATION_TIMEOUT_MS + " ms", EVALUATION_TIMEOUT_MS
+                ));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                future.cancel(true);
+                results.add(buildFailedRuleResult(
+                    rule, transaction, customer, "RULE_INTERRUPTED",
+                    "Rule evaluation interrupted", EVALUATION_TIMEOUT_MS
+                ));
             } catch (Exception e) {
                 logger.error("Error waiting for rule evaluation: {}", e.getMessage());
+                results.add(buildFailedRuleResult(
+                    rule, transaction, customer, "RULE_EXECUTION_ERROR",
+                    "Error waiting for rule result: " + e.getMessage(), EVALUATION_TIMEOUT_MS
+                ));
             }
         }
         
-        return new ArrayList<>(results);
+        return List.copyOf(results);
+    }
+
+    private RuleResult evaluateSingleRule(
+        Rule rule,
+        Transaction transaction,
+        CustomerContext customer,
+        RuleContext ruleContext,
+        long ruleStartTime
+    ) {
+        try {
+            return rule.evaluate(transaction, customer, ruleContext);
+        } catch (Rule.RuleEvaluationException e) {
+            logger.warn("Rule {} evaluation failed for transaction {}: {}",
+                rule.getRuleId(), transaction.transactionId(), e.getMessage());
+            return buildFailedRuleResult(
+                rule, transaction, customer, "RULE_EVALUATION_ERROR",
+                e.getMessage(), System.currentTimeMillis() - ruleStartTime
+            );
+        } catch (Exception e) {
+            logger.error("Unexpected error in rule {} evaluation: {}",
+                rule.getRuleId(), e.getMessage(), e);
+            return buildFailedRuleResult(
+                rule, transaction, customer, "RULE_UNEXPECTED_ERROR",
+                e.getMessage(), System.currentTimeMillis() - ruleStartTime
+            );
+        }
     }
     
     // ═══════════════════════════════════════════════════════════════════════════
@@ -504,6 +568,10 @@ public class AMLRuleEngine {
     private SARCase buildCaseList(List<RuleResult> triggeredRules,
                                    Transaction transaction,
                                    CustomerContext customer) {
+        if (triggeredRules == null || triggeredRules.isEmpty()) {
+            return null;
+        }
+
         String caseId = "CASE_" + transaction.transactionId() + "_" + 
                        System.currentTimeMillis();
         
@@ -543,6 +611,41 @@ public class AMLRuleEngine {
             Instant.now(),
             null
         );
+    }
+
+    private RuleResult buildFailedRuleResult(
+        Rule rule,
+        Transaction transaction,
+        CustomerContext customer,
+        String failureType,
+        String failureMessage,
+        long evaluationTimeMs
+    ) {
+        Map<String, Object> evidence = new LinkedHashMap<>();
+        evidence.put("failure_type", failureType);
+        evidence.put("failure_message", failureMessage);
+        evidence.put("rule_enabled", rule.isEnabled());
+
+        return RuleResult.builder()
+            .ruleId(rule.getRuleId())
+            .ruleName(rule.getRuleName())
+            .triggered(false)
+            .severityScore(0.0)
+            .typology(rule.getTypology())
+            .riskCategoryId("ENGINE_FAILURE")
+            .evaluationTimeMs(evaluationTimeMs)
+            .transactionId(transaction.transactionId())
+            .customerId(customer.customerId())
+            .evidence(evidence)
+            .recommendedAction("Rule execution failure - investigate rule health and retry evaluation")
+            .regulatoryBaseline(rule.getRegulatoryBasis())
+            .evaluatedAt(Instant.now())
+            .build();
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        virtualThreadExecutor.shutdown();
     }
     
     // ═══════════════════════════════════════════════════════════════════════════

@@ -1,6 +1,11 @@
 spring:
   application:
     name: aml
+  datasource:
+    url: ${AML_DB_URL:jdbc:postgresql://localhost:5432/aml}
+    username: ${AML_DB_USERNAME:aml}
+    password: ${AML_DB_PASSWORD:aml}
+    driver-class-name: org.postgresql.Driver
 
 server:
   port: 8080
@@ -30,6 +35,359 @@ aml:
       # HIGH-RISK customers: stricter (lower) thresholds
       # CRITICAL customers: even stricter thresholds
       apply-risk-adjustments: true
+
+    rule002:
+      # Time window for convergence checks
+      window-hours: 24
+
+      # Trigger when unique senders into same debtor account exceed this threshold
+      unique-sender-threshold: 5
+
+      # Enable/disable Rule 002
+      enabled: true
+
+    rule003:
+      # Dormancy period required before an account is considered inactive
+      dormancy-threshold-days: 90
+
+      # Minimum credit amount on reactivation to trigger the rule
+      amount-threshold: 5000.00
+
+      # Enable/disable Rule 003
+      enabled: true
+
+    rule004:
+      # Dormancy period for outgoing activity
+      dormancy-threshold-days: 90
+
+      # Minimum outgoing amount to trigger alert
+      alert-threshold: 5000.00
+
+      # Apply stricter thresholds for medium/high/critical risk profiles
+      apply-risk-multipliers: true
+
+      # Enable/disable Rule 004
+      enabled: true
+
+    rule006:
+      # Window for outgoing transfer amount similarity check
+      observation-window-hours: 24
+
+      # Minimum number of near-identical outgoing amounts to trigger
+      similarity-count-threshold: 5
+
+      # Percentage tolerance for similarity (e.g., 1%)
+      tolerance-percent: 0.01
+
+      # Absolute floor tolerance for similarity (e.g., TZS 1000)
+      fixed-tolerance-amount: 1000.00
+
+      # Stricter thresholds for medium/high/critical risk profiles
+      apply-risk-multipliers: true
+
+      enabled: true
+
+    rule007:
+      # Window for outgoing description similarity
+      observation-window-hours: 24
+
+      # Minimum repeated similar descriptions to trigger
+      minimum-occurrence-count: 4
+
+      # Similarity threshold (0.0 - 1.0)
+      description-similarity-threshold: 0.90
+
+      # Stricter thresholds for higher-risk profiles
+      apply-risk-multipliers: true
+
+      enabled: true
+
+    rule008:
+      # Observation window for transfers to same creditor
+      time-window-days: 7
+
+      # Minimum count to same creditor within the window
+      count-threshold: 5
+
+      # Optional minimum total amount to same creditor
+      minimum-total-amount: 0.00
+
+      apply-risk-multipliers: true
+      enabled: true
+
+    rule010:
+      # Current period for measuring outgoing volume spike
+      current-period-days: 7
+
+      # Historical period used to derive baseline average
+      historical-period-days: 30
+
+      # Trigger threshold multiplier over baseline
+      spike-factor: 3.0
+
+      # Minimum outgoing transaction count in current period
+      minimum-current-period-transaction-count: 3
+
+      apply-risk-multipliers: true
+      enabled: true
+
+    rule011:
+      # Current period for measuring incoming volume spike
+      current-period-days: 7
+
+      # Historical period used to derive baseline average
+      historical-period-days: 30
+
+      # Trigger threshold multiplier over baseline
+      spike-factor: 3.0
+
+      # Minimum incoming transaction count in current period
+      minimum-current-period-transaction-count: 3
+
+      apply-risk-multipliers: true
+      enabled: true
+
+    rule016:
+      # Convergence observation window for incoming activity
+      window-hours: 24
+
+      # Unique incoming sender threshold
+      unique-debtor-threshold: 8
+
+      # Optional minimum incoming volume in window
+      minimum-window-volume: 0.00
+
+      apply-risk-multipliers: true
+      enabled: true
+
+    rule017:
+      # Observation window for divergence behavior
+      time-window-hours: 24
+
+      # Unique receiver threshold for outgoing divergence
+      unique-creditor-threshold: 6
+
+      # Minimum outgoing transactions required in period
+      minimum-outgoing-transaction-count: 6
+
+      apply-risk-multipliers: true
+      enabled: true
+
+    rule018:
+      # Historical window for baseline average outgoing amount
+      historical-window-days: 30
+
+      # Current outgoing amount multiplier over baseline average
+      threshold-multiplier: 5.0
+
+      # Minimum history needed to establish baseline
+      minimum-historical-transactions: 5
+
+      # Optional absolute amount floor
+      absolute-minimum-amount-floor: 0.00
+
+      apply-risk-multipliers: true
+      enabled: true
+
+    rule020:
+      # Historical incoming window for baseline mean
+      historical-window-days: 30
+
+      # Current incoming amount multiplier over baseline mean
+      threshold-multiplier: 5.0
+
+      # Minimum incoming history needed to build baseline
+      minimum-historical-transactions: 5
+
+      apply-risk-multipliers: true
+      enabled: true
+
+    rule021:
+      # Observation window for clustering similar incoming amounts
+      window-hours: 24
+
+      # Minimum cluster size of similar incoming amounts
+      count-threshold: 8
+
+      # Allowed percentage variance inside a similarity cluster
+      tolerance-percent: 0.02
+
+      # Optional volume floor before evaluating clustering
+      minimum-total-incoming-volume: 0.00
+
+      apply-risk-multipliers: true
+      enabled: true
+
+    rule024:
+      # Mirroring observation window for incoming vs outgoing flows
+      window-hours: 48
+
+      # Minimum mirrored pairs required to trigger
+      pair-threshold: 3
+
+      # Allowed variance for amount matching
+      amount-tolerance-percent: 0.05
+
+      # Optional exclusion if inbound and outbound involve same counterparty
+      exclude-same-counterparty: false
+
+      apply-risk-multipliers: true
+      enabled: true
+
+    rule025:
+      # Debtor pass-through observation window
+      window-hours: 72
+
+      # Minimum mirrored matches required to trigger
+      match-threshold: 3
+
+      # Allowed variance for amount matching
+      amount-tolerance-percent: 0.05
+
+      apply-risk-multipliers: true
+      enabled: true
+
+    rule026:
+      # Commissioned mirroring window for creditor account
+      window-hours: 48
+      match-threshold: 3
+      amount-tolerance-percent: 0.05
+      expected-commission-min-percent: 0.01
+      expected-commission-max-percent: 0.05
+      max-commission-variance: 0.01
+      apply-risk-multipliers: true
+      enabled: true
+
+    rule027:
+      # Commissioned mirroring window for debtor account
+      window-hours: 48
+      match-threshold: 3
+      amount-tolerance-percent: 0.05
+      expected-commission-percent: 0.03
+      commission-tolerance-percent: 0.015
+      apply-risk-multipliers: true
+      enabled: true
+
+    rule028:
+      # New account age threshold for debtor behavior
+      age-threshold-days: 30
+      velocity-window-hours: 24
+      minimum-transaction-count: 3
+      volume-spike-factor: 3.0
+      apply-risk-multipliers: true
+      enabled: true
+
+    rule030:
+      # Unfamiliar creditor detection lookback
+      lookback-days: 180
+      minimum-amount: 500.00
+      apply-risk-multipliers: true
+      enabled: true
+
+    rule044:
+      # Outgoing frequency spike detection
+      current-period-days: 7
+      historical-period-days: 30
+      count-spike-factor: 3.0
+      apply-risk-multipliers: true
+      enabled: true
+
+    rule045:
+      # Incoming frequency spike detection
+      current-period-days: 7
+      historical-period-days: 30
+      count-spike-factor: 3.0
+      apply-risk-multipliers: true
+      enabled: true
+
+    rule048:
+      # Large outgoing amount vs baseline
+      historical-window-days: 30
+      threshold-multiplier: 5.0
+      minimum-historical-transactions: 5
+      apply-risk-multipliers: true
+      enabled: true
+
+    rule054:
+      # Benford synthetic-data check for debtor outgoing amounts
+      historical-window-days: 90
+      minimum-samples: 100
+      mad-threshold: 0.06
+      enabled: true
+
+    rule063:
+      # Benford synthetic-data check for creditor incoming amounts
+      historical-window-days: 90
+      minimum-samples: 100
+      mad-threshold: 0.06
+      enabled: true
+
+    rule074:
+      # Impossible-travel speed cap for consecutive debtor transactions
+      max-plausible-speed-kmh: 700.0
+      minimum-time-delta-minutes: 5
+      enabled: true
+
+    rule075:
+      # Distance from habitual debtor locations
+      historical-window-days: 90
+      minimum-historical-locations: 5
+      distance-threshold-km: 120.0
+      apply-risk-multipliers: true
+      enabled: true
+
+    rule076:
+      # Time gap anomaly detection (dormancy/burst)
+      inactivity-threshold-days: 90
+      burst-threshold-minutes: 60
+      enabled: true
+
+    rule078:
+      # High-risk transaction type mismatch vs profile
+      high-risk-types:
+        - INTERNATIONAL_WIRE
+        - CRYPTO_CONVERSION
+        - CASH_WITHDRAWAL
+      historical-window-days: 90
+      minimum-profile-samples: 5
+      enabled: true
+
+    rule083:
+      # Multiple debtor-linked accounts threshold
+      multi-account-threshold: 3
+      enabled: true
+
+    rule084:
+      # Multiple creditor-linked accounts threshold
+      multi-account-threshold: 3
+      enabled: true
+
+    rule090:
+      # Upstream channel divergence for debtor outflows
+      window-days: 30
+      channel-threshold: 3
+      enabled: true
+
+    rule091:
+      # Regulatory reporting thresholds
+      default-threshold: 10000.00
+      jurisdiction-thresholds:
+        US: 10000.00
+        TZ: 20000000.00
+      enabled: true
+
+    history:
+      # in-memory | postgres
+      provider: ${AML_HISTORY_PROVIDER:postgres}
+
+      # PostgreSQL table used by history provider
+      table-name: aml_transaction_history
+
+      # In-memory history retention for window-based rules
+      retention-hours: 720
+
+      # Memory safety cap per account
+      max-transactions-per-account: 50000
 
 # ═══════════════════════════════════════════════════════════════════════════
 # LOGGING CONFIGURATION

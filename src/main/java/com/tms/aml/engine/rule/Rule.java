@@ -82,6 +82,7 @@ public interface Rule {
      * 
      * @param transaction The transaction to evaluate (immutable, from Virtual Thread)
      * @param customer The customer context data (immutable, cached from repository)
+     * @param context Shared rule context (history provider, evaluation metadata)
      * 
      * @return RuleResult containing:
      *         - triggered: boolean indicating if rule condition was met
@@ -92,7 +93,7 @@ public interface Rule {
      * @throws RuleEvaluationException if evaluation cannot complete due to data issues
      *         (Note: Business rule mismatches should NOT throw; they set triggered=false)
      */
-    RuleResult evaluate(Transaction transaction, CustomerContext customer)
+    RuleResult evaluate(Transaction transaction, CustomerContext customer, RuleContext context)
         throws RuleEvaluationException;
     
     /**

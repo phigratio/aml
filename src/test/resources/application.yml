@@ -1,0 +1,9 @@
+aml:
+  engine:
+    history:
+      provider: in-memory
+
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration

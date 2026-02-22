@@ -1,0 +1,11 @@
+spring:
+  autoconfigure:
+    exclude: []
+  flyway:
+    enabled: true
+
+aml:
+  engine:
+    history:
+      provider: postgres
+      table-name: aml_transaction_history
