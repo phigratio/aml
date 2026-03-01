@@ -1,0 +1,46 @@
+{
+  "grpHdr": {
+    "msgId": "MSG-2026-02-22-DEMO-001",
+    "creDtTm": "2026-02-22T22:51:00",
+    "nbOfTxs": 2,
+    "sttlmInf": { "sttlmMtd": "CLRG" }
+  },
+  "cdtTrfTxInf": [
+    {
+      "pmtId": { "instrId": "INSTR-1", "endToEndId": "E2E-1", "txId": "TXN-1" },
+      "intrBkSttlmAmt": { "value": 15000.00, "ccy": "USD" },
+      "intrBkSttlmDt": "2026-02-22",
+      "cdtrAcct": { "id": "ACC-CRED-1" },
+      "cdtr": { "nm": "Creditor One", "id": "CUST-1" },
+      "dbtrAcct": { "id": "ACC-DBTR-1" },
+      "dbtr": { "nm": "Debtor One", "id": "DBTR-1" },
+      "rmtInf": { "ustrd": "type=CRYPTO_CONVERSION;channel=CRYPTO;geo=34.0522,-118.2437" }
+    },
+    {
+      "pmtId": { "instrId": "INSTR-2", "endToEndId": "E2E-2", "txId": "TXN-2" },
+      "intrBkSttlmAmt": { "value": 24000.00, "ccy": "USD" },
+      "intrBkSttlmDt": "2026-02-22",
+      "cdtrAcct": { "id": "ACC-CRED-1" },
+      "cdtr": { "nm": "Creditor One", "id": "CUST-1" },
+      "dbtrAcct": { "id": "ACC-DBTR-2" },
+      "dbtr": { "nm": "Debtor Two", "id": "DBTR-2" },
+      "rmtInf": { "ustrd": "type=INTERNATIONAL_WIRE;channel=BANK;geo=40.7128,-74.0060" }
+    }
+  ],
+  "customerContext": {
+    "customerId": "CUST-1",
+    "accountNumber": "ACC-CRED-1",
+    "customerType": "INDIVIDUAL",
+    "riskRating": "HIGH",
+    "accountOpenDate": "2026-02-10",
+    "kycCompletionDate": "2026-02-10",
+    "jurisdiction": "US",
+    "pep": false,
+    "sanctionedStatus": false,
+    "monthlyAverageCredit": 2000.00,
+    "monthlyAverageDebit": 1200.00,
+    "maxObservedTransaction": 25000.00,
+    "totalMonthlyTransactionCount": 8,
+    "businessSector": "RETAIL"
+  }
+}
