@@ -77,6 +77,26 @@ countOfMatchingAmounts  ──► COMPUTED COUNT of similarly-valued outgoing tr
 ```
 The `countOfMatchingAmounts` is the **final output** fed into `determineOutcome()`.
 
+## Data Requirements
+
+### Configurable Parameters
+| Parameter | Type | Description |
+|---|---|---|
+| `tolerance` | `number` | The percentage (e.g., 0.02 for 2%) used to define the similarity window. |
+| `maxQueryRange`| `number` | (Optional) The lookback period in milliseconds. |
+
+### Required KYC & Core Banking Data
+| Field | Path | Description |
+|---|---|---|
+| `TxSts` | `req.transaction.FIToFIPmtSts.TxInfAndSts.TxSts` | The status of the current transaction. |
+| `CreDtTm` | `req.transaction.FIToFIPmtSts.GrpHdr.CreDtTm` | The creation time of the current transaction. |
+| `TenantId` | `req.transaction.TenantId` | The identifier for the tenant. |
+
+### Cache Requirements
+| Field | Path | Description |
+|---|---|---|
+| `cdtrAcctId`| `req.DataCache.cdtrAcctId` | The account ID of the creditor. |
+
 ## How to Implement This in Your Application
 ### Database Table: transaction
 ```sql

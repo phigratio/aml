@@ -52,6 +52,26 @@ CreDtTm     ──► WHEN (The timestamps of the transactions)
 velocity    ──► COMPUTED SCORE (The calculated speed between the two points)
 ```
 
+## Data Requirements
+
+### Configurable Parameters
+| Parameter | Type | Description |
+|---|---|---|
+| `maxQueryRange` | `number` | The lookback period in milliseconds to find the previous transaction. |
+| `bands` | `Array` | The array of velocity bands (in km/h) for scoring. |
+
+### Required KYC & Core Banking Data
+| Field | Path | Description |
+|---|---|---|
+| `OrgnlEndToEndId`| `req.transaction.FIToFIPmtSts.TxInfAndSts.OrgnlEndToEndId` | The unique ID of the current transaction. |
+| `TenantId` | `req.transaction.TenantId` | The identifier for the tenant. |
+| `Lat` / `Long` | `pacs008->...->'InitgPty'->'Glctn'->'Lat'` / `'Long'` | The latitude and longitude from the supplementary data of the raw pacs.008 document. |
+
+### Cache Requirements
+| Field | Path | Description |
+|---|---|---|
+| `dbtrAcctId`| `req.DataCache.dbtrAcctId` | The account ID of the debtor. |
+
 ## How to Implement This in Your Application
 ### Database Table: pacs008
 ```sql

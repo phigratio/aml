@@ -75,6 +75,27 @@ avg             ──► COMPUTED BASELINE (The account's historical average pa
 stdDev          ──► COMPUTED DEVIATION (The account's historical payment value volatility)
 ```
 
+## Data Requirements
+
+### Configurable Parameters
+| Parameter | Type | Description |
+|---|---|---|
+| `bands` | `Array` | Array of standard deviation multipliers for scoring. |
+| `exitConditions`| `Array` | Conditions for exiting the rule early. |
+
+### Required KYC & Core Banking Data
+| Field | Path | Description |
+|---|---|---|
+| `TxSts` | `req.transaction.FIToFIPmtSts.TxInfAndSts.TxSts` | The status of the current transaction. |
+| `OrgnlEndToEndId` | `req.transaction.FIToFIPmtSts.TxInfAndSts.OrgnlEndToEndId` | The unique ID of the current transaction. |
+| `CreDtTm` | `req.transaction.FIToFIPmtSts.GrpHdr.CreDtTm` | The creation time of the current transaction. |
+| `TenantId` | `req.transaction.TenantId` | The identifier for the tenant. |
+
+### Cache Requirements
+| Field | Path | Description |
+|---|---|---|
+| `cdtrAcctId`| `req.DataCache.cdtrAcctId` | The account ID of the creditor. |
+
 ## How to Implement This in Your Application
 ### Database Table: transaction
 ```sql

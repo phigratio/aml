@@ -45,6 +45,26 @@ chiSquareValue    ──► COMPUTED SCORE (How much the data deviates from Benf
 ```
 A **high** `chiSquareValue` indicates higher risk.
 
+## Data Requirements
+
+### Configurable Parameters
+| Parameter | Type | Description |
+|---|---|---|
+| `minimumNumberOfTransactions` | `number` | The minimum size of the historical dataset required to perform a meaningful Benford's analysis. |
+| `bands` | `Array` | The array of Chi-Square value bands for scoring. |
+
+### Required KYC & Core Banking Data
+| Field | Path | Description |
+|---|---|---|
+| `TxSts` | `req.transaction.FIToFIPmtSts.TxInfAndSts.TxSts` | The status of the current transaction. |
+| `CreDtTm` | `req.transaction.FIToFIPmtSts.GrpHdr.CreDtTm` | The creation time of the current transaction. |
+| `TenantId` | `req.transaction.TenantId` | The identifier for the tenant. |
+
+### Cache Requirements
+| Field | Path | Description |
+|---|---|---|
+| `dbtrAcctId`| `req.DataCache.dbtrAcctId` | The account ID of the debtor. |
+
 ## How to Implement This in Your Application
 ### Your Rule Config Structure
 ```json

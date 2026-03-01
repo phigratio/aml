@@ -34,6 +34,24 @@ creditorId         ──► WHO (The legal entity being analyzed)
 numberOfAccounts   ──► COMPUTED COUNT (How many accounts this entity holds)
 ```
 
+## Data Requirements
+
+### Configurable Parameters
+| Parameter | Type | Description |
+|---|---|---|
+| `bands` | `Array` | The array of count-based bands for scoring. |
+
+### Required KYC & Core Banking Data
+| Field | Path | Description |
+|---|---|---|
+| `CreDtTm` | `req.transaction.FIToFIPmtSts.GrpHdr.CreDtTm` | The creation time of the current transaction. |
+| `TenantId` | `req.transaction.TenantId` | The identifier for the tenant. |
+
+### Cache Requirements
+| Field | Path | Description |
+|---|---|---|
+| `cdtrId`| `req.DataCache.cdtrId` | The legal entity ID of the creditor. |
+
 ## How to Implement This in Your Application
 ### Database Table: account_holder
 This rule requires a table that maps legal entity IDs to their associated payment accounts.

@@ -43,6 +43,27 @@ maxRadius          ──► HOW (The radius in km to define a "hotspot")
 withinLocations    ──► COMPUTED COUNT (Number of past txns in the hotspot)
 ```
 
+## Data Requirements
+
+### Configurable Parameters
+| Parameter | Type | Description |
+|---|---|---|
+| `maxRadius` | `number` | The radius in kilometers to define a "hotspot". |
+| `bands` | `Array` | The array of count-based bands for scoring. |
+
+### Required KYC & Core Banking Data
+| Field | Path | Description |
+|---|---|---|
+| `OrgnlEndToEndId`| `req.transaction.FIToFIPmtSts.TxInfAndSts.OrgnlEndToEndId` | The unique ID of the current transaction. |
+| `TenantId` | `req.transaction.TenantId` | The identifier for the tenant. |
+| `Lat` / `Long` | `pacs008->...->'InitgPty'->'Glctn'->'Lat'` / `'Long'` | The latitude and longitude from the raw pacs.008 document. |
+
+### Cache Requirements
+| Field | Path | Description |
+|---|---|---|
+| `dbtrAcctId`| `req.DataCache.dbtrAcctId` | The account ID of the debtor. |
+| `creDtTm` | `req.DataCache.creDtTm` | The timestamp of the current transaction. |
+
 ## How to Implement This in Your Application
 ### Your Rule Config Structure
 ```json

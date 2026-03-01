@@ -44,6 +44,26 @@ historicalAmounts  ──► WHAT (The set of numbers being analyzed)
 chiSquareValue     ──► COMPUTED SCORE (How much the data deviates from Benford's Law)
 ```
 
+## Data Requirements
+
+### Configurable Parameters
+| Parameter | Type | Description |
+|---|---|---|
+| `minimumNumberOfTransactions` | `number` | The minimum size of the historical dataset required for a meaningful analysis. |
+| `bands` | `Array` | The array of Chi-Square value bands for scoring. |
+
+### Required KYC & Core Banking Data
+| Field | Path | Description |
+|---|---|---|
+| `TxSts` | `req.transaction.FIToFIPmtSts.TxInfAndSts.TxSts` | The status of the current transaction. |
+| `CreDtTm` | `req.transaction.FIToFIPmtSts.GrpHdr.CreDtTm` | The creation time of the current transaction. |
+| `TenantId` | `req.transaction.TenantId` | The identifier for the tenant. |
+
+### Cache Requirements
+| Field | Path | Description |
+|---|---|---|
+| `cdtrAcctId`| `req.DataCache.cdtrAcctId` | The account ID of the creditor. |
+
 ## How to Implement This in Your Application
 ### Your Rule Config Structure
 ```json

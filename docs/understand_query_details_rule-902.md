@@ -46,6 +46,26 @@ maxQueryRange      ──► HOW (The duration of the lookback window)
 length             ──► COMPUTED COUNT (The number of transactions in the window)
 ```
 
+## Data Requirements
+
+### Configurable Parameters
+| Parameter | Type | Description |
+|---|---|---|
+| `maxQueryRange` | `number` | The lookback period in milliseconds. |
+| `bands` | `Array` | The array of count-based bands for scoring. |
+
+### Required KYC & Core Banking Data
+| Field | Path | Description |
+|---|---|---|
+| `TxSts` | `req.transaction.FIToFIPmtSts.TxInfAndSts.TxSts` | The status of the current transaction. |
+| `CreDtTm` | `req.transaction.FIToFIPmtSts.GrpHdr.CreDtTm` | The creation time of the current transaction. |
+| `TenantId` | `req.transaction.TenantId` | The identifier for the tenant. |
+
+### Cache Requirements
+| Field | Path | Description |
+|---|---|---|
+| `cdtrAcctId`| `req.DataCache.cdtrAcctId` | The account ID of the creditor. |
+
 ## How to Implement This in Your Application
 ### Your Rule Config Structure
 ```json
@@ -62,6 +82,6 @@ length             ──► COMPUTED COUNT (The number of transactions in the w
 }
 ```
 ### Key Insight
-This rule is a fundamental velocity check on the sending party. A high volume of outgoing payments from a single account in a short period is a primary indicator of potential "fan-out" activity, where a compromised or fraudulent account is used to rapidly disperse funds to multiple other accounts. By tuning the `maxQueryRange` and the `bands`, institutions can create alerts for specific high-frequency scenarios that warrant investigation.
+This rule is a fundamental velocity check on the sending party. A high volume of outgoing payments from a single account in a short period is a primary indicator of potential "fan-out" activity, where a compromised or fraudulent account is used to rapidly disperse funds to multiple other accounts. By tuning the `maxQueryRange` and the `bands`, institutions can create alerts for specific high-frequency scenarios that deviate from normal customer behavior.
 
 Each rule is documented with its business logic, detection algorithm, configurable parameters, required KYC and core banking data inputs, cache requirements, regulatory references, and alert output specifications. and also db design for that specific rule the fields and the variables configurations.

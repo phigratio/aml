@@ -46,6 +46,24 @@ debtorAccountId   ──► WHO (The account being measured)
 count             ──► COMPUTED COUNT (The total number of incoming transactions)
 ```
 
+## Data Requirements
+
+### Configurable Parameters
+| Parameter | Type | Description |
+|---|---|---|
+| `bands` | `Array` | The array of count-based bands for scoring the account's maturity. |
+
+### Required KYC & Core Banking Data
+| Field | Path | Description |
+|---|---|---|
+| `CreDtTm` | `req.transaction.FIToFIPmtSts.GrpHdr.CreDtTm` | The creation time of the current transaction. |
+| `TenantId` | `req.transaction.TenantId` | The identifier for the tenant. |
+
+### Cache Requirements
+| Field | Path | Description |
+|---|---|---|
+| `dbtrAcctId`| `req.DataCache.dbtrAcctId` | The account ID of the debtor. |
+
 ## How to Implement This in Your Application
 ### Database Table: transaction
 ```sql

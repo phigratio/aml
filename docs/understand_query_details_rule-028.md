@@ -50,6 +50,26 @@ debtorAge    ──► COMPUTED VALUE (The age in years at the time of the trans
 ```
 The `debtorAge` is the **final output** fed into `determineOutcome()`.
 
+## Data Requirements
+
+### Configurable Parameters
+| Parameter | Type | Description |
+|---|---|---|
+| `bands` | `Array` | The array of age-based bands for scoring. |
+
+### Required KYC & Core Banking Data
+| Field | Path | Description |
+|---|---|---|
+| `OrgnlEndToEndId` | `req.transaction.FIToFIPmtSts.TxInfAndSts.OrgnlEndToEndId` | The unique ID of the current transaction. |
+| `CreDtTm` | `req.transaction.FIToFIPmtSts.GrpHdr.CreDtTm` | The creation time of the current transaction, used for the age calculation. |
+| `TenantId` | `req.transaction.TenantId` | The identifier for the tenant. |
+| `BirthDt` | `pacs008->...->'Dbtr'->'Id'->'PrvtId'->'DtAndPlcOfBirth'->'BirthDt'`| The debtor's date of birth from the raw pacs.008 document. |
+
+### Cache Requirements
+| Field | Path | Description |
+|---|---|---|
+| None | - | This rule does not require any pre-cached data. |
+
 ## How to Implement This in Your Application
 ### Database Table: pacs008
 ```sql

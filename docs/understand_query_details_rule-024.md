@@ -61,6 +61,27 @@ historicalAmounts  ──► HOW (The prior incoming payments that make up the m
 iterationValue     ──► COMPUTED COUNT (Number of txns needed to mirror the amount)
 ```
 
+## Data Requirements
+
+### Configurable Parameters
+| Parameter | Type | Description |
+|---|---|---|
+| `tolerance` | `number` | The percentage (e.g., 0.01 for 1%) used for fuzzy matching of the summed amounts. |
+| `maxQueryRange`| `number` | The lookback period in milliseconds to find prior incoming payments. |
+
+### Required KYC & Core Banking Data
+| Field | Path | Description |
+|---|---|---|
+| `TxSts` | `req.transaction.FIToFIPmtSts.TxInfAndSts.TxSts` | The status of the current transaction. |
+| `CreDtTm` | `req.transaction.FIToFIPmtSts.GrpHdr.CreDtTm` | The creation time of the current transaction. |
+| `TenantId` | `req.transaction.TenantId` | The identifier for the tenant. |
+
+### Cache Requirements
+| Field | Path | Description |
+|---|---|---|
+| `cdtrAcctId`| `req.DataCache.cdtrAcctId` | The account ID of the creditor. |
+| `creDtTm` | `req.DataCache.creDtTm` | The timestamp of the specific outgoing transaction to be used as the target. |
+
 ## How to Implement This in Your Application
 ### Your Rule Config Structure
 ```json

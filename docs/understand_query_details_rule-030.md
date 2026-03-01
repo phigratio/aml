@@ -50,6 +50,27 @@ count              ──► COMPUTED COUNT (The number of past successful trans
 ```
 A low `count` generally signifies a higher risk.
 
+## Data Requirements
+
+### Configurable Parameters
+| Parameter | Type | Description |
+|---|---|---|
+| `bands` | `Array` | The array of count-based bands for scoring the relationship strength. |
+| `exitConditions`| `Array` | Conditions for exiting the rule early. |
+
+### Required KYC & Core Banking Data
+| Field | Path | Description |
+|---|---|---|
+| `TxSts` | `req.transaction.FIToFIPmtSts.TxInfAndSts.TxSts` | The status of the current transaction. |
+| `CreDtTm` | `req.transaction.FIToFIPmtSts.GrpHdr.CreDtTm` | The creation time of the current transaction. |
+| `TenantId` | `req.transaction.TenantId` | The identifier for the tenant. |
+
+### Cache Requirements
+| Field | Path | Description |
+|---|---|---|
+| `cdtrAcctId`| `req.DataCache.cdtrAcctId` | The account ID of the creditor. |
+| `dbtrAcctId`| `req.DataCache.dbtrAcctId` | The account ID of the debtor. |
+
 ## How to Implement This in Your Application
 ### Database Table: transaction
 ```sql

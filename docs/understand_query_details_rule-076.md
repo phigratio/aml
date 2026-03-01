@@ -47,6 +47,25 @@ timeDifferenceInMs   ──► COMPUTED VALUE (Time elapsed between the last two
 ```
 A **low** `timeDifferenceInMs` indicates higher risk.
 
+## Data Requirements
+
+### Configurable Parameters
+| Parameter | Type | Description |
+|---|---|---|
+| `bands` | `Array` | The array of time-based bands (in milliseconds) for scoring. |
+| `exitConditions`| `Array` | Conditions for exiting the rule early. |
+
+### Required KYC & Core Banking Data
+| Field | Path | Description |
+|---|---|---|
+| `TenantId` | `req.transaction.TenantId` | The identifier for the tenant. |
+
+### Cache Requirements
+| Field | Path | Description |
+|---|---|---|
+| `dbtrAcctId`| `req.DataCache.dbtrAcctId` | The account ID of the debtor. |
+| `creDtTm` | `req.DataCache.creDtTm` | The timestamp of the current transaction. |
+
 ## How to Implement This in Your Application
 ### Database Table: transaction
 ```sql

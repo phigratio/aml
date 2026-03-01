@@ -24,6 +24,23 @@ This rule performs **no database queries**.
 instdAmt.amt   ──► WHAT (The raw amount of the transaction being scored)
 ```
 
+## Data Requirements
+
+### Configurable Parameters
+| Parameter | Type | Description |
+|---|---|---|
+| `bands` | `Array` | The array of static monetary thresholds for scoring. |
+
+### Required KYC & Core Banking Data
+| Field | Path | Description |
+|---|---|---|
+| None | - | This rule operates solely on cached data. |
+
+### Cache Requirements
+| Field | Path | Description |
+|---|---|---|
+| `instdAmt`| `req.DataCache.instdAmt` | The instructed amount of the current transaction. |
+
 ## How to Implement This in Your Application
 ### Your Rule Config Structure
 The configuration for this rule consists of simple monetary bands.

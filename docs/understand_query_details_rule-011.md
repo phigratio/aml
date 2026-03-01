@@ -60,6 +60,26 @@ currentInterval         ──► WHAT (The creditor's transaction count in the 
 avg                     ──► COMPUTED BASELINE (The creditor's historical average frequency)
 stdDev                  ──► COMPUTED DEVIATION (The creditor's historical volatility)
 ```
+## Data Requirements
+
+### Configurable Parameters
+| Parameter | Type | Description |
+|---|---|---|
+| `evaluationIntervalTime` | `number` | The size of the time buckets (in ms) for creating the frequency histogram. |
+| `bands` | `Array` | Array of standard deviation multipliers for scoring. |
+
+### Required KYC & Core Banking Data
+| Field | Path | Description |
+|---|---|---|
+| `TxSts` | `req.transaction.FIToFIPmtSts.TxInfAndSts.TxSts` | The status of the current transaction. |
+| `OrgnlEndToEndId` | `req.transaction.FIToFIPmtSts.TxInfAndSts.OrgnlEndToEndId` | The unique ID of the current transaction. |
+| `CreDtTm` | `req.transaction.FIToFIPmtSts.GrpHdr.CreDtTm` | The creation time of the current transaction. |
+| `TenantId` | `req.transaction.TenantId` | The identifier for the tenant. |
+
+### Cache Requirements
+| Field | Path | Description |
+|---|---|---|
+| `cdtrAcctId`| `req.DataCache.cdtrAcctId` | The account ID of the creditor. |
 
 ## How to Implement This in Your Application
 The implementation details are identical to Rule-010, with the understanding that the analysis is applied to the creditor.

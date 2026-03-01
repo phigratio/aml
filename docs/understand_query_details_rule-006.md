@@ -78,6 +78,26 @@ matchingAmounts   ──► COMPUTED COUNT of similarly-valued transactions
 ```
 The `matchingAmounts` count is the **final output** fed into `determineOutcome()`.
 
+## Data Requirements
+
+### Configurable Parameters
+| Parameter | Type | Description |
+|---|---|---|
+| `maxQueryLimit` | `number` | The maximum number of recent transactions to retrieve for analysis. |
+| `tolerance` | `number` | The percentage (e.g., 0.05 for 5%) used to define the similarity window around the most recent transaction's amount. |
+
+### Required KYC & Core Banking Data
+| Field | Path | Description |
+|---|---|---|
+| `TxSts` | `req.transaction.FIToFIPmtSts.TxInfAndSts.TxSts` | The status of the current transaction, used to check for success (`ACCC`). |
+| `CreDtTm` | `req.transaction.FIToFIPmtSts.GrpHdr.CreDtTm` | The creation time of the current transaction. |
+| `TenantId` | `req.transaction.TenantId` | The identifier for the tenant. |
+
+### Cache Requirements
+| Field | Path | Description |
+|---|---|---|
+| `dbtrAcctId`| `req.DataCache.dbtrAcctId` | The account ID of the debtor. |
+
 ## How to Implement This in Your Application
 ### Database Table: transaction
 ```sql

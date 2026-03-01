@@ -55,6 +55,25 @@ FROM highestCount;
 debtorAccountId  ──► WHO (The anchor point for the network analysis)
 value            ──► COMPUTED SCORE (The max number of sources for any upstream account)
 ```
+## Data Requirements
+
+### Configurable Parameters
+| Parameter | Type | Description |
+|---|---|---|
+| `maxQueryRangeUpstream` | `number` | The lookback period (in ms) to find upstream accounts. |
+| `maxQueryRangeDownstream`| `number` | The lookback period (in ms) to analyze the sources of those upstream accounts. |
+
+### Required KYC & Core Banking Data
+| Field | Path | Description |
+|---|---|---|
+| `CreDtTm` | `req.transaction.FIToFIPmtSts.GrpHdr.CreDtTm` | The creation time of the current transaction. |
+| `TenantId` | `req.transaction.TenantId` | The identifier for the tenant. |
+
+### Cache Requirements
+| Field | Path | Description |
+|---|---|---|
+| `dbtrAcctId`| `req.DataCache.dbtrAcctId` | The account ID of the debtor, used as the starting point for the network analysis. |
+
 ## Key Insight
 This rule performs a "friend-of-a-friend" style network analysis. It doesn't just look at the current transaction's parties; it investigates their recent partners. The underlying logic is that money laundering networks often use gatherer accounts that collect funds from many low-level sources before passing them on. By flagging a transaction because the debtor was recently paid by a major "gatherer," this rule can detect risk that is not visible by looking at the immediate transaction alone. It's a powerful tool for uncovering hidden relationships in complex payment chains.
 

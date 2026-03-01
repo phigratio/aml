@@ -74,6 +74,27 @@ levenshteinDistance ──► COMPUTED SCORE of how different the two messages a
 ```
 A **low** `levenshteinDistance` indicates a **high** risk.
 
+## Data Requirements
+
+### Configurable Parameters
+| Parameter | Type | Description |
+|---|---|---|
+| `bands` | `Array` | The array of Levenshtein distance thresholds to score the similarity. |
+| `exitConditions`| `Array` | Conditions for exiting the rule early (e.g., insufficient history). |
+
+### Required KYC & Core Banking Data
+| Field | Path | Description |
+|---|---|---|
+| `TxSts` | `req.transaction.FIToFIPmtSts.TxInfAndSts.TxSts` | The status of the current transaction, used to check for success (`ACCC`). |
+| `CreDtTm` | `req.transaction.FIToFIPmtSts.GrpHdr.CreDtTm` | The creation time of the current transaction. |
+| `TenantId` | `req.transaction.TenantId` | The identifier for the tenant. |
+| `Ustrd` | `pacs008->'FIToFICstmrCdtTrf'->'RmtInf'->'Ustrd'` | The unstructured remittance information from the raw pacs.008 document. |
+
+### Cache Requirements
+| Field | Path | Description |
+|---|---|---|
+| `dbtrAcctId`| `req.DataCache.dbtrAcctId` | The account ID of the debtor. |
+
 ## How to Implement This in Your Application
 ### Database Tables
 This rule requires two tables: one for indexed event history and one for raw document storage.

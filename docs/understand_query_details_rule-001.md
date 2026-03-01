@@ -96,6 +96,25 @@ Band 2: 7–30 days      → medium     → .02
 Band 3: 30+ days       → low risk   → .03
 Exit .x01: no history  → unknown    → exit early
 ```
+## Data Requirements
+
+### Configurable Parameters
+| Parameter | Type | Description |
+|---|---|---|
+| `bands` | `Array` | The array of time bands (in milliseconds) used to score the account's age. |
+| `exitConditions`| `Array` | The array of conditions for exiting the rule early (e.g., no history). |
+
+### Required KYC & Core Banking Data
+| Field | Path | Description |
+|---|---|---|
+| `CreDtTm` | `req.transaction.FIToFIPmtSts.GrpHdr.CreDtTm` | The creation time of the current transaction, used as the upper bound for the historical search. |
+| `TenantId` | `req.transaction.TenantId` | The identifier for the tenant, used for data isolation. |
+
+### Cache Requirements
+| Field | Path | Description |
+|---|---|---|
+| `cdtrAcctId`| `req.DataCache.cdtrAcctId` | The account ID of the creditor, which is the primary subject of the rule. |
+
 ## How to Implement This in Your Application
 ### Database Table: transaction
 ```sql

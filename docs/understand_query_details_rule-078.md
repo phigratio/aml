@@ -48,6 +48,25 @@ CtgyPurpPrtry  ──► WHAT (The business purpose of the payment)
 outcome        ──► COMPUTED RESULT (The risk outcome directly mapped from the code)
 ```
 
+## Data Requirements
+
+### Configurable Parameters
+| Parameter | Type | Description |
+|---|---|---|
+| `cases` | `object` | The object containing the `expressions` array for mapping codes to outcomes. |
+
+### Required KYC & Core Banking Data
+| Field | Path | Description |
+|---|---|---|
+| `OrgnlEndToEndId`| `req.transaction.FIToFIPmtSts.TxInfAndSts.OrgnlEndToEndId` | The unique ID of the current transaction. |
+| `TenantId` | `req.transaction.TenantId` | The identifier for the tenant. |
+| `CtgyPurpPrtry` | `pacs008/pain001 -> ...` | The category purpose code from the raw payment document. |
+
+### Cache Requirements
+| Field | Path | Description |
+|---|---|---|
+| None | - | This rule does not require any pre-cached data. |
+
 ## How to Implement This in Your Application
 ### Database Tables: pacs008 / pain001
 ```sql

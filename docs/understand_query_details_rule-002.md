@@ -60,6 +60,25 @@ count             ──► RAW RESULT from DB (the number of transactions found
 ```
 The `count` is the **final output** fed into `determineOutcome()`, which compares it against the configured `bands`.
 
+## Data Requirements
+
+### Configurable Parameters
+| Parameter | Type | Description |
+|---|---|---|
+| `maxQueryRange` | `number` | The lookback period in milliseconds. |
+| `bands` | `Array` | The array of count-based bands used to score the result. |
+
+### Required KYC & Core Banking Data
+| Field | Path | Description |
+|---|---|---|
+| `CreDtTm` | `req.transaction.FIToFIPmtSts.GrpHdr.CreDtTm` | The creation time of the current transaction. |
+| `TenantId` | `req.transaction.TenantId` | The identifier for the tenant. |
+
+### Cache Requirements
+| Field | Path | Description |
+|---|---|---|
+| `dbtrAcctId`| `req.DataCache.dbtrAcctId` | The account ID of the debtor. |
+
 ## How to Implement This in Your Application
 ### Database Table: transaction
 ```sql

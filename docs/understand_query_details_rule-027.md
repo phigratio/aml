@@ -45,6 +45,28 @@ targetAmount       ──► WHAT (The incoming payment being mirrored)
 historicalAmounts  ──► HOW (The prior outgoing payments that make up the mirror)
 iterationValue     ──► COMPUTED COUNT (Number of prior txns needed to mirror the amount + commission)
 ```
+## Data Requirements
+
+### Configurable Parameters
+| Parameter | Type | Description |
+|---|---|---|
+| `tolerance` | `number` | The percentage (e.g., 0.02 for 2%) for fuzzy matching. |
+| `commission` | `number` | The expected commission percentage (e.g., 0.05 for 5%). |
+| `maxQueryRange`| `number` | The lookback period in milliseconds. |
+
+### Required KYC & Core Banking Data
+| Field | Path | Description |
+|---|---|---|
+| `TxSts` | `req.transaction.FIToFIPmtSts.TxInfAndSts.TxSts` | The status of the current transaction. |
+| `CreDtTm` | `req.transaction.FIToFIPmtSts.GrpHdr.CreDtTm` | The creation time of the current transaction. |
+| `TenantId` | `req.transaction.TenantId` | The identifier for the tenant. |
+
+### Cache Requirements
+| Field | Path | Description |
+|---|---|---|
+| `dbtrAcctId`| `req.DataCache.dbtrAcctId` | The account ID of the debtor. |
+| `instdAmt` | `req.DataCache.instdAmt` | The instructed amount of the current incoming transaction (the `targetAmount`). |
+| `creDtTm` | `req.DataCache.creDtTm` | The timestamp of the current incoming transaction. |
 
 ## How to Implement This in Your Application
 ### Your Rule Config Structure

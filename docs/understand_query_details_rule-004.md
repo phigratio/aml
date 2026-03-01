@@ -110,6 +110,26 @@ timeDifferenceInMs     ──► COMPUTED DORMANCY in milliseconds for the debto
 ```
 The `timeDifferenceInMs` is the **final output** passed to `determineOutcome()` for risk evaluation.
 
+## Data Requirements
+
+### Configurable Parameters
+| Parameter | Type | Description |
+|---|---|---|
+| `bands` | `Array` | The array of time bands (in milliseconds) used to score the dormancy period. |
+| `exitConditions`| `Array` | Conditions for exiting the rule early. |
+
+### Required KYC & Core Banking Data
+| Field | Path | Description |
+|---|---|---|
+| `CreDtTm` | `req.transaction.FIToFIPmtSts.GrpHdr.CreDtTm` | The creation time of the current transaction. |
+| `OrgnlEndToEndId` | `req.transaction.FIToFIPmtSts.TxInfAndSts.OrgnlEndToEndId` | The unique ID of the transaction, used to exclude it from history. |
+| `TenantId` | `req.transaction.TenantId` | The identifier for the tenant. |
+
+### Cache Requirements
+| Field | Path | Description |
+|---|---|---|
+| `dbtrAcctId`| `req.DataCache.dbtrAcctId` | The account ID of the debtor. |
+
 ## How to Implement This in Your Application
 The implementation details are identical to Rule-003, with the understanding that the logic is being applied to the debtor account.
 

@@ -74,6 +74,28 @@ ratio            ──► COMPUTED SCORE (Current Amount / Historical Max)
 ```
 A high `ratio` signifies a high risk.
 
+## Data Requirements
+
+### Configurable Parameters
+| Parameter | Type | Description |
+|---|---|---|
+| `maxQueryRange` | `number` | The lookback period in milliseconds for finding the historical max amount. |
+| `bands` | `Array` | The array of ratio-based bands for scoring. |
+
+### Required KYC & Core Banking Data
+| Field | Path | Description |
+|---|---|---|
+| `TxSts` | `req.transaction.FIToFIPmtSts.TxInfAndSts.TxSts` | The status of the current transaction. |
+| `OrgnlEndToEndId` | `req.transaction.FIToFIPmtSts.TxInfAndSts.OrgnlEndToEndId` | The unique ID of the current transaction. |
+| `CreDtTm` | `req.transaction.FIToFIPmtSts.GrpHdr.CreDtTm` | The creation time of the current transaction. |
+| `TenantId` | `req.transaction.TenantId` | The identifier for the tenant. |
+
+### Cache Requirements
+| Field | Path | Description |
+|---|---|---|
+| `dbtrAcctId`| `req.DataCache.dbtrAcctId` | The account ID of the debtor. |
+| `instdAmt` | `req.DataCache.instdAmt` | The instructed amount of the current transaction. |
+
 ## How to Implement This in Your Application
 ### Database Table: transaction
 ```sql
